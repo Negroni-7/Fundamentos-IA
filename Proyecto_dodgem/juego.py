@@ -11,8 +11,8 @@ def llenar_tablero(tablero, azules, rojos):
         if i == len(tablero) - 1:
             continue
 
-        azules.append(Ficha(i + 1, "azul", i, 0))
-        rojos.append(Ficha(i + 1, "rojo", len(tablero) - 1, i + 1))
+        azules.append(Ficha(i + 1, "azul", i, 0)) # Equipo azul son las X                       <-----------------------------
+        rojos.append(Ficha(i + 1, "rojo", len(tablero) - 1, i + 1)) # Equipo rojo son las O     <-----------------------------
         tablero[i][0] = "X"
         tablero[len(tablero) - 1][i + 1] = "O"
 

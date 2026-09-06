@@ -7,7 +7,7 @@ from math import inf
 from juego import equipo_bloqueado, faltan_fichas_coronar
 
 class Agente:
-    def __init__(self, equipo, nombre="Agente", profundidad=15):
+    def __init__(self, equipo, nombre="Agente", profundidad=8):
         self.equipo = equipo
         self.nombre = nombre
         self.profundidad = profundidad
@@ -69,13 +69,13 @@ class Agente:
         for ficha in fichas:
             if ficha.corona:
                 continue
-
+            fila, columna = ficha.posicion
             # Movimiento hacia arriba
-            if ficha.posicion[0] > 0 and tablero[ficha.posicion[0] - 1][ficha.posicion[1]] == '.':
+            if fila > 0 and tablero[fila - 1][columna] == '.':
                 movimientos.append((ficha, 1))
             
             # Movimiento hacia la derecha
-            if ficha.posicion[1] < len(tablero) - 1 and tablero[ficha.posicion[0]][ficha.posicion[1] + 1] == '.': 
+            if columna < len(tablero) - 1 and tablero[fila][columna + 1] == '.': 
                 movimientos.append((ficha, 2))
             
              
@@ -100,25 +100,27 @@ class Agente:
         nueva_fila = ficha.posicion[0]
         nueva_columna = ficha.posicion[1]
 
+        fila, columna = ficha.posicion
+
         if movimiento == 1:  # Arriba
-            if ficha.equipo == "rojo" and ficha.posicion[0] == 0:
+            if ficha.equipo == "rojo" and fila == 0:
                 corona = True
-                nueva_fila = None
+                nueva_fila, nueva_columna = -1, -1  # Posición fuera del tablero
             else:
-                nueva_fila = ficha.posicion[0] - 1
+                nueva_fila = fila - 1
         elif movimiento == 2:  # Derecha
-            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
+            if ficha.equipo == "azul" and columna == len(tablero) - 1:
                 corona = True
-                nueva_columna = None
+                nueva_fila, nueva_columna = -1, -1  # Posición fuera del tablero
             else:
-                nueva_columna = ficha.posicion[1] + 1
+                nueva_columna = columna + 1
         elif movimiento == 3:
             if ficha.equipo == "azul":  # Abajo
-                nueva_fila = ficha.posicion[0] + 1
+                nueva_fila = fila + 1
             else:  # rojo - Izquierda
-                nueva_columna = ficha.posicion[1] - 1
+                nueva_columna = columna - 1
 
-        nuevo_tablero[ficha.posicion[0]][ficha.posicion[1]] = "."
+        nuevo_tablero[fila][columna] = "."
         if not corona:
             simbolo = "X" if ficha.equipo == "azul" else "O"
             nuevo_tablero[nueva_fila][nueva_columna] = simbolo
@@ -126,10 +128,11 @@ class Agente:
         return nuevo_tablero, [nueva_fila, nueva_columna], corona
     
     def es_terminal(self, tablero, es_turno_agente):
+        inf = float('inf')
         if faltan_fichas_coronar(self.fichas):
-            return True, 1
+            return True, inf
         if equipo_bloqueado(self.fichas, tablero):
-            return True, -1
+            return True, -inf
 
         if es_turno_agente:
             fichas_que_mueven = self.fichas
@@ -137,43 +140,63 @@ class Agente:
             fichas_que_mueven = self.fichas_rival
 
         if equipo_bloqueado(fichas_que_mueven, tablero):
-            return True, -1 if es_turno_agente else 1
+            return True, -inf if es_turno_agente else inf
         
         return False, 0
     
     def evaluar_estado(self, tablero):
         n = len(tablero)
-        PENALIZACION_OBSTACULO = 3
+        valor_avance = 5
+        penalizacion_obstaculo = 3
+        penalizacion_lateral = 1.5
 
         progreso_propio = 0
         for ficha in self.fichas:
+            fila, columna = ficha.posicion
             if ficha.corona:
                 progreso_propio += 100
                 continue
-            distancia = (n - 1 - ficha.posicion[1]) if ficha.equipo == "azul" else ficha.posicion[0]
-            progreso_propio += 10 / (distancia + 1)
+            distancia = (n - 1 - columna) if ficha.equipo == "azul" else fila
+            progreso_propio += valor_avance * (n - distancia)
 
             if ficha.equipo == "azul":
-                if ficha.posicion[1] < n - 1 and tablero[ficha.posicion[0]][ficha.posicion[1] + 1] != ".":
-                    progreso_propio -= PENALIZACION_OBSTACULO
+                if columna < n - 1 and tablero[fila][columna + 1] != ".": # Si hay un obstáculo a la derecha, penalizar
+                    progreso_propio -= penalizacion_obstaculo
+                if fila > 0 and tablero[fila - 1][columna] != ".": # Si hay un obstáculo arriba, penalizar
+                    progreso_propio -= penalizacion_lateral
+                if fila < n - 1 and tablero[fila + 1][columna] != ".": # Si hay un obstáculo abajo, penalizar
+                    progreso_propio -= penalizacion_lateral
             else:
-                if ficha.posicion[0] > 0 and tablero[ficha.posicion[0] - 1][ficha.posicion[1]] != ".":
-                    progreso_propio -= PENALIZACION_OBSTACULO
-
+                if fila > 0 and tablero[fila - 1][columna] != ".": # Si hay un obstáculo arriba, penalizar
+                    progreso_propio -= penalizacion_obstaculo
+                if columna < n - 1 and tablero[fila][columna + 1] != ".": # Si hay un obstáculo a la derecha, penalizar                
+                    progreso_propio -= penalizacion_lateral
+                if columna > 0 and tablero[fila][columna - 1] != ".": # Si hay un obstáculo a la izquierda, penalizar
+                    progreso_propio -= penalizacion_lateral
+                    
         progreso_rival = 0
         for ficha in self.fichas_rival:
             if ficha.corona:
                 progreso_rival += 100
                 continue
-            distancia = (n - 1 - ficha.posicion[1]) if ficha.equipo == "azul" else ficha.posicion[0]
-            progreso_rival += 10 / (distancia + 1)
+            fila, columna = ficha.posicion
+            distancia = (n - 1 - columna) if ficha.equipo == "azul" else fila
+            progreso_rival += valor_avance * (n - distancia)
 
             if ficha.equipo == "azul":
-                if ficha.posicion[1] < n - 1 and tablero[ficha.posicion[0]][ficha.posicion[1] + 1] != ".":
-                    progreso_rival -= PENALIZACION_OBSTACULO
+                if columna < n - 1 and tablero[fila][columna + 1] != ".":
+                    progreso_rival -= penalizacion_obstaculo
+                if fila > 0 and tablero[fila - 1][columna] != ".":
+                    progreso_rival -= penalizacion_lateral
+                if fila < n - 1 and tablero[fila + 1][columna] != ".":
+                    progreso_rival -= penalizacion_lateral
             else:
-                if ficha.posicion[0] > 0 and tablero[ficha.posicion[0] - 1][ficha.posicion[1]] != ".":
-                    progreso_rival -= PENALIZACION_OBSTACULO
+                if fila > 0 and tablero[fila - 1][columna] != ".":
+                    progreso_rival -= penalizacion_obstaculo
+                if columna < n - 1 and tablero[fila][columna + 1] != ".":
+                    progreso_rival -= penalizacion_lateral
+                if columna > 0 and tablero[fila][columna - 1] != ".":
+                    progreso_rival -= penalizacion_lateral * 0.5
 
         return progreso_propio - progreso_rival
     

@@ -3,10 +3,9 @@
 # Stefano Negroni 21.945.448-1
 
 import time
-from tablero import (imprimir_tablero, generar_tablero, limpiar_consola,
-                     generar_codigo)
+from tablero import (imprimir_tablero, generar_tablero, limpiar_consola)
 from juego import (llenar_tablero, seleccion_ficha, faltan_fichas_coronar,
-                   equipo_bloqueado)
+                   equipo_bloqueado, hay_repeticion)
 from agente import Agente
 
 
@@ -17,7 +16,6 @@ def jugar():
     print("====================================\n")
     
     while True:
-
         print("================MENU================")
         print("=            1. Jugar              =")
         print("=            2. Salir              =")
@@ -52,7 +50,7 @@ def jugar():
                     # Juega X
                     print("Turno del equipo de las X")
                     imprimir_tablero(tablero)
-                    coordenada_jugar = None
+                    
                     if equipo_bloqueado(equipo_a, tablero):
                         print(
                             "El equipo de las X no puede moverse."
@@ -67,54 +65,57 @@ def jugar():
                         )
                         time.sleep(5)
                         exit()
-                    else:
-                        while coordenada_jugar is None:
-                            coordenada_jugar = seleccion_ficha("azul", tablero)
-                
-                        for ficha in equipo_a:
-                            if ficha.posicion == coordenada_jugar:
-                                ficha.mover_ficha(tablero)
-                        if faltan_fichas_coronar(equipo_a):
-                            print("Felicidades. Gana el equipo de las X")
-                            time.sleep(5)
-                            exit()
-                            
-                        codigo_actual = generar_codigo(tablero, "X")
-                        if historial.count(codigo_actual) >= 3:
-                            print(
-                                "Debido a repetición de movimientos,"
-                                "el juego queda en empate."
-                            )
-                            time.sleep(5)
-                            exit()
-                        historial.append(codigo_actual)
-                        limpiar_consola()
-                            
-                        # Juega O
-                        print("Turno del equipo de los O")
-                        imprimir_tablero(tablero)
-                        coordenada_jugar = None
-                        while coordenada_jugar is None:
-                            coordenada_jugar = seleccion_ficha("rojo", tablero)
-                        for ficha in equipo_r:
-                            if ficha.posicion == coordenada_jugar:
-                                ficha.mover_ficha(tablero)
-                        if faltan_fichas_coronar(equipo_r):
-                            print("Felicidades. Gana el equipo de las O")
-                            time.sleep(5)
-                            exit()
-                            
-                        codigo_actual = generar_codigo(tablero, "O")
-                        if historial.count(codigo_actual) >= 3:
-                            print(
-                                "Debido a repetición de movimientos,"
-                                "el juego queda en empate."
-                            )
-                            time.sleep(5)
-                            exit()
-                        historial.append(codigo_actual)
-                        limpiar_consola()
-                        break
+
+                    coordenada_jugar = None
+            
+                    while coordenada_jugar is None:
+                        coordenada_jugar = seleccion_ficha("azul", tablero)
+            
+                    for ficha in equipo_a:
+                        if ficha.posicion == coordenada_jugar:
+                            ficha.mover_ficha(tablero)
+                    if faltan_fichas_coronar(equipo_a):
+                        print("Felicidades. Gana el equipo de las X")
+                        time.sleep(5)
+                        exit()
+                        
+                    hay_repeticion(tablero, "X", historial)
+                    limpiar_consola()
+                        
+                    # Juega O
+                    print("Turno del equipo de los O")
+                    imprimir_tablero(tablero)
+                    
+                    if equipo_bloqueado(equipo_a, tablero):
+                        print(
+                            "El equipo de las X no puede moverse."
+                            "Gana el equipo de las O"
+                        )
+                        time.sleep(5)
+                        exit()
+                    elif equipo_bloqueado(equipo_r, tablero):
+                        print(
+                            "El equipo de las O no puede moverse."
+                            "Gana el equipo de las X"
+                        )
+                        time.sleep(5)
+                        exit()
+
+                    coordenada_jugar = None
+
+                    while coordenada_jugar is None:
+                        coordenada_jugar = seleccion_ficha("rojo", tablero)
+                    for ficha in equipo_r:
+                        if ficha.posicion == coordenada_jugar:
+                            ficha.mover_ficha(tablero)
+                    if faltan_fichas_coronar(equipo_r):
+                        print("Felicidades. Gana el equipo de las O")
+                        time.sleep(5)
+                        exit()
+                        
+                    hay_repeticion(tablero, "O", historial)
+                    limpiar_consola()
+                    
                 
             elif opcion_sub_menu == "2":
                 print("Iniciando juego contra la IA...")
@@ -166,22 +167,17 @@ def jugar():
                             if ficha.posicion == coordenada_jugar:
                                 ficha.mover_ficha(tablero)
                     else:
-                        # ---------------------------------
+                        
                         ficha_elegida, movimiento_elegido = agente.mejor_movimiento(tablero)
                         agente.aplicar_movimiento(tablero, ficha_elegida, movimiento_elegido)
-                        # ---------------------------------
+                    
 
                     if faltan_fichas_coronar(equipo_a):
                         print("Felicidades. Gana el equipo de las X")
                         time.sleep(5)
                         exit()
 
-                    codigo_actual = generar_codigo(tablero, "X")
-                    if historial.count(codigo_actual) >= 3:
-                        print("Debido a repetición de movimientos, el juego queda en empate.")
-                        time.sleep(5)
-                        exit()
-                    historial.append(codigo_actual)
+                    hay_repeticion(tablero, "X", historial)
                     limpiar_consola()   
 
                     print("Turno del equipo de los O")
@@ -206,22 +202,16 @@ def jugar():
                             if ficha.posicion == coordenada_jugar:
                                 ficha.mover_ficha(tablero)
                     else:
-                        # ---------------------------------
+        
                         ficha_elegida, movimiento_elegido = agente.mejor_movimiento(tablero)
                         agente.aplicar_movimiento(tablero, ficha_elegida, movimiento_elegido)
-                        # ---------------------------------
 
                     if faltan_fichas_coronar(equipo_r):
                         print("Felicidades. Gana el equipo de las O")
                         time.sleep(5)
                         exit()
 
-                    codigo_actual = generar_codigo(tablero, "O")
-                    if historial.count(codigo_actual) >= 3:
-                        print("Debido a repetición de movimientos, el juego queda en empate.")
-                        time.sleep(5)
-                        exit()
-                    historial.append(codigo_actual)
+                    hay_repeticion(tablero, "O", historial)
                     limpiar_consola()
                          
             elif opcion_sub_menu == "3":

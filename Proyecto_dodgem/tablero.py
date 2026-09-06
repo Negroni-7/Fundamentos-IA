@@ -4,7 +4,6 @@
 
 import os
 
-
 def imprimir_tablero(tablero):
     """Imprime el tablero en pantalla."""
     print()

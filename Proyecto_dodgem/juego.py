@@ -2,6 +2,9 @@
 # Isabella Quintero 25.868.144-4
 # Stefano Negroni 21.945.448-1
 
+from time import time
+
+from tablero import generar_codigo
 from ficha import Ficha
 
 
@@ -61,33 +64,51 @@ def faltan_fichas_coronar(equipo_x):
 def equipo_bloqueado(equipo_x, tablero):
     """Bucle que recorre la lista de fichas del equipo y revisa si alguna
     puede moverse."""
+    n = len(tablero)
     for ficha in equipo_x:
         if ficha.corona:
             continue
+
+        fila, columna = ficha.posicion
         if ficha.equipo == "azul":
-            if (ficha.posicion[0] > 0
-                    and tablero[ficha.posicion[0] - 1][ficha.posicion[1]]
+            if (fila > 0
+                    and tablero[fila - 1][columna]
                     == "."):
                 return False
-            elif (ficha.posicion[1] < len(tablero) - 1
-                    and tablero[ficha.posicion[0]][ficha.posicion[1] + 1]
-                  == "."):
+            
+            if columna == n-1:
                 return False
-            elif (ficha.posicion[0] < len(tablero) - 1
-                    and tablero[ficha.posicion[0] + 1][ficha.posicion[1]]
-                  == "."):
+            
+            elif (tablero[fila][columna + 1] == "."):
                 return False
+            if (fila < n - 1 and tablero[fila + 1][columna] == "."):
+                return False
+            
         elif ficha.equipo == "rojo":
-            if (ficha.posicion[0] > 0
-                    and tablero[ficha.posicion[0] - 1][ficha.posicion[1]]
+            if fila == 0:
+                return False
+            elif (tablero[fila - 1][columna]
                     == "."):
                 return False
-            elif (ficha.posicion[1] < len(tablero) - 1
-                    and tablero[ficha.posicion[0]][ficha.posicion[1] + 1]
+            if (columna < n - 1
+                    and tablero[fila][columna + 1]
                   == "."):
                 return False
-            elif (ficha.posicion[1] > 0
-                    and tablero[ficha.posicion[0]][ficha.posicion[1] - 1]
+            if (columna > 0
+                    and tablero[fila][columna - 1]
                   == "."):
                 return False
     return True
+
+def hay_repeticion(tablero, turno, historial):
+    """Registra el estado actual del tablero en el historial y termina
+    la partida en empate si ese estado ya se repitió 3 veces."""
+    codigo_actual = generar_codigo(tablero, turno)
+    historial.append(codigo_actual)
+    if historial.count(codigo_actual) >= 3:
+        print(
+            "Debido a repetición de movimientos,"
+            "el juego queda en empate."
+        )
+        time.sleep(5)
+        exit()

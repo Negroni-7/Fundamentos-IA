@@ -7,13 +7,57 @@ from math import inf
 from juego import equipo_bloqueado, faltan_fichas_coronar
 
 class Agente:
-    def __init__(self, equipo, nombre="Agente", profundidad=3):
+    def __init__(self, equipo, nombre="Agente", profundidad=15):
         self.equipo = equipo
         self.nombre = nombre
         self.profundidad = profundidad
         self.fichas = []
         self.fichas_rival = []
         self.nodos = 0
+
+    def aplicar_movimiento(self, tablero, ficha, movimiento):
+        """Aplica de forma permanente el movimiento elegido sobre el tablero real."""
+        nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
+
+        for i in range(len(tablero)):
+            for j in range(len(tablero)):
+                tablero[i][j] = nuevo_tablero[i][j]
+
+        ficha.posicion = nueva_pos
+        ficha.corona = corona
+        
+    def mejor_movimiento(self, tablero):
+        """Evalúa cada jugada propia posible en la raíz y devuelve la
+        (ficha, movimiento) que produce el mejor valor."""
+        movimientos = self.obtener_movimientos_posibles(tablero, self.fichas)
+
+        mejor_valor = -inf
+        mejor_ficha = None
+        mejor_jugada = None
+        alfa = -inf
+        beta = inf
+
+        for ficha, movimiento in movimientos:
+            nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
+
+            pos_original = ficha.posicion[:]
+            corona_original = ficha.corona
+            ficha.posicion = nueva_pos
+            ficha.corona = corona
+
+            valor = self.alfa_beta_limitada(nuevo_tablero, False, self.profundidad - 1, alfa, beta)
+
+            ficha.posicion = pos_original
+            ficha.corona = corona_original
+
+            if valor > mejor_valor:
+                mejor_valor = valor
+                mejor_ficha = ficha
+                mejor_jugada = movimiento
+
+            alfa = max(alfa, mejor_valor)
+
+        return mejor_ficha, mejor_jugada
     
     def asignar_fichas(self, fichas_propias, fichas_rival):
         self.fichas = fichas_propias
@@ -51,32 +95,34 @@ class Agente:
         return movimientos
     
     def simular_movimiento(self, tablero, ficha, movimiento):
-        
         nuevo_tablero = [fila[:] for fila in tablero]
         corona = False
         nueva_fila = ficha.posicion[0]
         nueva_columna = ficha.posicion[1]
-        
+
         if movimiento == 1:  # Arriba
-            nueva_fila = ficha.posicion[0] - 1
-            if ficha.equipo == "rojo" and nueva_fila == 0:
+            if ficha.equipo == "rojo" and ficha.posicion[0] == 0:
                 corona = True
+                nueva_fila = None
+            else:
+                nueva_fila = ficha.posicion[0] - 1
         elif movimiento == 2:  # Derecha
-            nueva_columna = ficha.posicion[1] + 1
-            if ficha.equipo == "azul" and nueva_columna == len(tablero) - 1:
+            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
                 corona = True
+                nueva_columna = None
+            else:
+                nueva_columna = ficha.posicion[1] + 1
         elif movimiento == 3:
             if ficha.equipo == "azul":  # Abajo
                 nueva_fila = ficha.posicion[0] + 1
             else:  # rojo - Izquierda
                 nueva_columna = ficha.posicion[1] - 1
-        
+
         nuevo_tablero[ficha.posicion[0]][ficha.posicion[1]] = "."
-        if ficha.equipo == "azul":
-            nuevo_tablero[nueva_fila][nueva_columna] = "X"
-        else:
-            nuevo_tablero[nueva_fila][nueva_columna] = "O"
-        
+        if not corona:
+            simbolo = "X" if ficha.equipo == "azul" else "O"
+            nuevo_tablero[nueva_fila][nueva_columna] = simbolo
+
         return nuevo_tablero, [nueva_fila, nueva_columna], corona
     
     def es_terminal(self, tablero, es_turno_agente):
@@ -96,7 +142,9 @@ class Agente:
         return False, 0
     
     def evaluar_estado(self, tablero):
-        n = len(tablero)   
+        n = len(tablero)
+        PENALIZACION_OBSTACULO = 3
+
         progreso_propio = 0
         for ficha in self.fichas:
             if ficha.corona:
@@ -104,7 +152,14 @@ class Agente:
                 continue
             distancia = (n - 1 - ficha.posicion[1]) if ficha.equipo == "azul" else ficha.posicion[0]
             progreso_propio += 10 / (distancia + 1)
-            
+
+            if ficha.equipo == "azul":
+                if ficha.posicion[1] < n - 1 and tablero[ficha.posicion[0]][ficha.posicion[1] + 1] != ".":
+                    progreso_propio -= PENALIZACION_OBSTACULO
+            else:
+                if ficha.posicion[0] > 0 and tablero[ficha.posicion[0] - 1][ficha.posicion[1]] != ".":
+                    progreso_propio -= PENALIZACION_OBSTACULO
+
         progreso_rival = 0
         for ficha in self.fichas_rival:
             if ficha.corona:
@@ -112,6 +167,13 @@ class Agente:
                 continue
             distancia = (n - 1 - ficha.posicion[1]) if ficha.equipo == "azul" else ficha.posicion[0]
             progreso_rival += 10 / (distancia + 1)
+
+            if ficha.equipo == "azul":
+                if ficha.posicion[1] < n - 1 and tablero[ficha.posicion[0]][ficha.posicion[1] + 1] != ".":
+                    progreso_rival -= PENALIZACION_OBSTACULO
+            else:
+                if ficha.posicion[0] > 0 and tablero[ficha.posicion[0] - 1][ficha.posicion[1]] != ".":
+                    progreso_rival -= PENALIZACION_OBSTACULO
 
         return progreso_propio - progreso_rival
     

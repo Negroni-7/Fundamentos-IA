@@ -7,6 +7,7 @@ from tablero import (imprimir_tablero, generar_tablero, limpiar_consola,
                      generar_codigo)
 from juego import (llenar_tablero, seleccion_ficha, faltan_fichas_coronar,
                    equipo_bloqueado)
+from agente import Agente
 
 
 def jugar():
@@ -118,7 +119,111 @@ def jugar():
             elif opcion_sub_menu == "2":
                 print("Iniciando juego contra la IA...")
                 time.sleep(2)
-                break
+                n = input("Ingrese el tamaño del tablero (mínimo 4 y con numero PAR): ")
+                while not n.isdigit() or int(n) < 4 or int(n) % 2 != 0:
+                    print("ERROR: Ingrese un valor numérico válido")
+                    n = input("Ingrese el tamaño del tablero (mínimo 4 y con numero PAR): ")
+                n = int(n)
+                limpiar_consola()
+                tablero = generar_tablero(n)
+                equipo_a = []
+                equipo_r = []
+                historial = []
+                llenar_tablero(tablero, equipo_a, equipo_r)
+                parar_juego = False
+
+                escoger_equipo = input("Seleccione su equipo (X para azul, O para rojo): ").upper()
+                while escoger_equipo not in ["X", "O"]:
+                    print("ERROR: Ingrese un equipo válido (X o O)")
+                    escoger_equipo = input("Seleccione su equipo (X para azul, O para rojo): ").upper()
+
+                if escoger_equipo == "X":
+                    agente = Agente("rojo")
+                    agente.asignar_fichas(equipo_r, equipo_a)
+
+                else:
+                    agente = Agente("azul")
+                    agente.asignar_fichas(equipo_a, equipo_r)
+
+                while not parar_juego:
+                    print("Turno del equipo de las X")
+                    imprimir_tablero(tablero)
+
+                    if equipo_bloqueado(equipo_a, tablero):
+                        print("El equipo de las X no puede moverse. Gana el equipo de las O")
+                        time.sleep(5)
+                        exit()
+                    elif equipo_bloqueado(equipo_r, tablero):
+                        print("El equipo de las O no puede moverse. Gana el equipo de las X")
+                        time.sleep(5)
+                        exit()
+
+                    if escoger_equipo == "X":
+                        coordenada_jugar = None
+                        while coordenada_jugar is None:
+                            coordenada_jugar = seleccion_ficha("azul", tablero)
+                        for ficha in equipo_a:
+                            if ficha.posicion == coordenada_jugar:
+                                ficha.mover_ficha(tablero)
+                    else:
+                        # ---------------------------------
+                        ficha_elegida, movimiento_elegido = agente.mejor_movimiento(tablero)
+                        agente.aplicar_movimiento(tablero, ficha_elegida, movimiento_elegido)
+                        # ---------------------------------
+
+                    if faltan_fichas_coronar(equipo_a):
+                        print("Felicidades. Gana el equipo de las X")
+                        time.sleep(5)
+                        exit()
+
+                    codigo_actual = generar_codigo(tablero, "X")
+                    if historial.count(codigo_actual) >= 3:
+                        print("Debido a repetición de movimientos, el juego queda en empate.")
+                        time.sleep(5)
+                        exit()
+                    historial.append(codigo_actual)
+                    limpiar_consola()   
+
+                    print("Turno del equipo de los O")
+                    imprimir_tablero(tablero)
+
+                    if faltan_fichas_coronar(equipo_a) or faltan_fichas_coronar(equipo_r):
+                        pass  # ya se validó arriba, pero si acabó de coronar X, no debe jugar O
+                    elif equipo_bloqueado(equipo_a, tablero):
+                        print("El equipo de las X no puede moverse. Gana el equipo de las O")
+                        time.sleep(5)
+                        exit()
+                    elif equipo_bloqueado(equipo_r, tablero):
+                        print("El equipo de las O no puede moverse. Gana el equipo de las X")
+                        time.sleep(5)
+                        exit()
+
+                    if escoger_equipo == "O":
+                        coordenada_jugar = None
+                        while coordenada_jugar is None:
+                            coordenada_jugar = seleccion_ficha("rojo", tablero)
+                        for ficha in equipo_r:
+                            if ficha.posicion == coordenada_jugar:
+                                ficha.mover_ficha(tablero)
+                    else:
+                        # ---------------------------------
+                        ficha_elegida, movimiento_elegido = agente.mejor_movimiento(tablero)
+                        agente.aplicar_movimiento(tablero, ficha_elegida, movimiento_elegido)
+                        # ---------------------------------
+
+                    if faltan_fichas_coronar(equipo_r):
+                        print("Felicidades. Gana el equipo de las O")
+                        time.sleep(5)
+                        exit()
+
+                    codigo_actual = generar_codigo(tablero, "O")
+                    if historial.count(codigo_actual) >= 3:
+                        print("Debido a repetición de movimientos, el juego queda en empate.")
+                        time.sleep(5)
+                        exit()
+                    historial.append(codigo_actual)
+                    limpiar_consola()
+                         
             elif opcion_sub_menu == "3":
                 continue
 

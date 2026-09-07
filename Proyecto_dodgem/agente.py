@@ -15,6 +15,10 @@ class Agente:
         self.fichas_rival = []
         self.nodos = 0
 
+    def asignar_fichas(self, fichas_propias, fichas_rival):
+        self.fichas = fichas_propias
+        self.fichas_rival = fichas_rival
+
     def aplicar_movimiento(self, tablero, ficha, movimiento):
         """Aplica de forma permanente el movimiento elegido sobre el tablero real."""
         nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
@@ -30,6 +34,21 @@ class Agente:
         """Evalúa cada jugada propia posible en la raíz y devuelve la
         (ficha, movimiento) que produce el mejor valor."""
         movimientos = self.obtener_movimientos_posibles(tablero, self.fichas)
+        
+        movimientos_coronacion = []
+        movimientos_normales = []
+        
+        for ficha, movimiento in movimientos:
+            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
+                movimientos_coronacion.append((ficha, movimiento))
+            elif ficha.equipo == "rojo" and ficha.posicion[0] == 0:
+                movimientos_coronacion.append((ficha, movimiento))
+            else:
+                movimientos_normales.append((ficha, movimiento))
+        
+        if movimientos_coronacion:
+            ficha, movimiento = movimientos_coronacion[0]
+            return ficha, movimiento
 
         mejor_valor = -inf
         mejor_ficha = None
@@ -37,7 +56,7 @@ class Agente:
         alfa = -inf
         beta = inf
 
-        for ficha, movimiento in movimientos:
+        for ficha, movimiento in movimientos_normales:
             nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
 
             pos_original = ficha.posicion[:]
@@ -69,7 +88,15 @@ class Agente:
         for ficha in fichas:
             if ficha.corona:
                 continue
+
             fila, columna = ficha.posicion
+
+            # Agregar posibilidad de coronar                                                                        
+            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
+                movimientos.append((ficha, 2))  # Coronación hacia la derecha
+            elif ficha.equipo == "rojo" and ficha.posicion[0] == 0:
+                movimientos.append((ficha, 1))  # Coronación hacia arriba
+
             # Movimiento hacia arriba
             if fila > 0 and tablero[fila - 1][columna] == '.':
                 movimientos.append((ficha, 1))
@@ -77,7 +104,6 @@ class Agente:
             # Movimiento hacia la derecha
             if columna < len(tablero) - 1 and tablero[fila][columna + 1] == '.': 
                 movimientos.append((ficha, 2))
-            
              
             if ficha.equipo == "azul":  # Movimiento hacia abajo 
                 if ficha.posicion[0] < len(tablero) - 1 and tablero[ficha.posicion[0] + 1][ficha.posicion[1]] == '.':
@@ -86,11 +112,7 @@ class Agente:
                 if ficha.posicion[1] > 0 and tablero[ficha.posicion[0]][ficha.posicion[1] - 1] == '.':
                     movimientos.append((ficha, 3))
 
-            # Agregar posibilidad de coronar                                                                        
-            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
-                movimientos.append((ficha, 2))  # Coronación hacia la derecha
-            elif ficha.equipo == "rojo" and ficha.posicion[0] == 0:
-                movimientos.append((ficha, 1))  # Coronación hacia arriba
+            
 
         return movimientos
     
@@ -105,13 +127,15 @@ class Agente:
         if movimiento == 1:  # Arriba
             if ficha.equipo == "rojo" and fila == 0:
                 corona = True
-                nueva_fila, nueva_columna = -1, -1  # Posición fuera del tablero
+                nuevo_tablero[fila][columna] = "."
+                return nuevo_tablero, [fila, columna], corona
             else:
                 nueva_fila = fila - 1
         elif movimiento == 2:  # Derecha
             if ficha.equipo == "azul" and columna == len(tablero) - 1:
                 corona = True
-                nueva_fila, nueva_columna = -1, -1  # Posición fuera del tablero
+                nuevo_tablero[fila][columna] = "."
+                return nuevo_tablero, [fila, columna], corona
             else:
                 nueva_columna = columna + 1
         elif movimiento == 3:

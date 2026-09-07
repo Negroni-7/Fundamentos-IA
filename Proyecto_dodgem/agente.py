@@ -7,7 +7,7 @@ from math import inf
 from juego import equipo_bloqueado, faltan_fichas_coronar
 
 class Agente:
-    def __init__(self, equipo, nombre="Agente", profundidad=8):
+    def __init__(self, equipo, nombre="Agente", profundidad=10):
         self.equipo = equipo
         self.nombre = nombre
         self.profundidad = profundidad
@@ -21,7 +21,8 @@ class Agente:
 
     def aplicar_movimiento(self, tablero, ficha, movimiento):
         """Aplica de forma permanente el movimiento elegido sobre el tablero real."""
-        nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
+        nuevo_tablero, nueva_pos, corona = self.simular_movimiento(
+            tablero, ficha, movimiento)
 
         for i in range(len(tablero)):
             for j in range(len(tablero)):
@@ -39,7 +40,8 @@ class Agente:
         movimientos_normales = []
         
         for ficha, movimiento in movimientos:
-            if ficha.equipo == "azul" and ficha.posicion[1] == len(tablero) - 1:
+            if ficha.equipo == "azul" and ficha.posicion[1] == len(
+                tablero) - 1:
                 movimientos_coronacion.append((ficha, movimiento))
             elif ficha.equipo == "rojo" and ficha.posicion[0] == 0:
                 movimientos_coronacion.append((ficha, movimiento))
@@ -52,19 +54,21 @@ class Agente:
 
         mejor_valor = -inf
         mejor_ficha = None
-        mejor_jugada = None
+        mejor_ficha, mejor_jugada = movimientos[0]
         alfa = -inf
         beta = inf
 
         for ficha, movimiento in movimientos_normales:
-            nuevo_tablero, nueva_pos, corona = self.simular_movimiento(tablero, ficha, movimiento)
+            nuevo_tablero, nueva_pos, corona = self.simular_movimiento(
+                tablero, ficha, movimiento)
 
             pos_original = ficha.posicion[:]
             corona_original = ficha.corona
             ficha.posicion = nueva_pos
             ficha.corona = corona
 
-            valor = self.alfa_beta_limitada(nuevo_tablero, False, self.profundidad - 1, alfa, beta)
+            valor = self.alfa_beta_limitada(nuevo_tablero, False,
+                                             self.profundidad - 1, alfa, beta)
 
             ficha.posicion = pos_original
             ficha.corona = corona_original
@@ -111,9 +115,6 @@ class Agente:
             else:   # Movimiento hacia la izquierda
                 if ficha.posicion[1] > 0 and tablero[ficha.posicion[0]][ficha.posicion[1] - 1] == '.':
                     movimientos.append((ficha, 3))
-
-            
-
         return movimientos
     
     def simular_movimiento(self, tablero, ficha, movimiento):

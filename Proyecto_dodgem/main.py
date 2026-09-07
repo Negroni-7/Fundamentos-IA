@@ -8,7 +8,6 @@ from juego import (llenar_tablero, seleccion_ficha, faltan_fichas_coronar,
                    equipo_bloqueado, hay_repeticion)
 from agente import Agente
 
-
 def jugar():
     """Función principal que ejecuta el juego."""
     print("====================================")

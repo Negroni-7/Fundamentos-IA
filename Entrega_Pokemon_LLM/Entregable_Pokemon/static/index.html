@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbot Pokémon Kanto</title>
+<link rel="icon" href="data:,">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 15px; line-height: 1.45; color: #222; background: #f5f5f5;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 2px; font-weight: 600; }
+  .sub { margin: 0 0 16px; color: #666; font-size: 14px; }
+  .caja { background: #fff; border: 1px solid #d9d9d9; border-radius: 6px; }
+
+  .modos { display: flex; border-bottom: 1px solid #d9d9d9; }
+  .modos label { flex: 1; text-align: center; padding: 10px 8px; cursor: pointer; color: #555; border-bottom: 2px solid transparent; }
+  .modos input { position: absolute; opacity: 0; }
+  .modos input:checked + span { color: #111; font-weight: 600; }
+  .modos label:has(input:checked) { border-bottom-color: #444; }
+  .modos label:has(input:focus-visible) { outline: 2px solid #777; outline-offset: -2px; }
+
+  #chat { height: 380px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .vacio { margin: auto; color: #888; text-align: center; font-size: 14px; }
+  .msg { flex-shrink: 0; max-width: 85%; padding: 8px 11px; border-radius: 6px; border: 1px solid #e2e2e2; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .msg.usuario { align-self: flex-end; background: #ececec; }
+  .msg.bot { align-self: flex-start; background: #fafafa; }
+  .msg.error { border-color: #c9a0a0; color: #7a2222; }
+  .msg small { display: block; margin-bottom: 2px; color: #777; font-size: 12px; }
+
+  .panel { padding: 12px 14px; border-top: 1px solid #d9d9d9; }
+  .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .campo { display: flex; flex-direction: column; gap: 3px; flex: 1 1 160px; min-width: 0; }
+  .campo.ancho { flex-basis: 100%; }
+  .campo span { font-size: 12px; color: #666; }
+  select, input[type=text], input[type=password] {
+    width: 100%; padding: 8px 9px; font: inherit; color: inherit;
+    background: #fff; border: 1px solid #bbb; border-radius: 4px;
+  }
+  button {
+    padding: 8px 16px; font: inherit; color: #fff; background: #444;
+    border: 1px solid #444; border-radius: 4px; cursor: pointer;
+  }
+  button:hover { background: #2e2e2e; }
+  button:disabled { background: #aaa; border-color: #aaa; cursor: default; }
+  select:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid #777; outline-offset: 1px; }
+  .aviso { margin: 0 0 10px; padding: 8px 10px; font-size: 13px; color: #555; background: #f3f3f3; border: 1px solid #ddd; border-radius: 4px; }
+  .nota { margin: 8px 0 0; font-size: 12px; color: #777; }
+  .pie { margin: 10px 2px 0; font-size: 12px; color: #777; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chatbot Pokémon Kanto</h1>
+  <p class="sub">Dos chatbots sobre la misma base de conocimiento: uno con lógica de primer orden (Prolog) y otro con un modelo de lenguaje (LLM).</p>
+
+  <div class="caja">
+    <div class="modos" role="radiogroup" aria-label="Chatbot a utilizar">
+      <label><input type="radio" name="modo" value="prolog" checked><span>Chatbot Prolog</span></label>
+      <label><input type="radio" name="modo" value="llm"><span>Chatbot LLM</span></label>
+    </div>
+
+    <div id="chat" aria-live="polite">
+      <p class="vacio" id="vacio">Elija un chatbot y haga una consulta.<br>Las respuestas de ambos quedan en esta misma conversación para compararlas.</p>
+    </div>
+
+    <!-- Panel Prolog: menu de consultas leido desde opcion/5 -->
+    <form class="panel" id="panel-prolog">
+      <p class="aviso" id="aviso-prolog" hidden></p>
+      <div class="fila">
+        <label class="campo ancho"><span>Consulta</span><select id="opcion"></select></label>
+      </div>
+      <div class="fila" style="margin-top:8px">
+        <div class="fila" id="entradas" style="flex:1 1 auto"></div>
+        <button type="submit" id="btn-prolog">Consultar</button>
+      </div>
+    </form>
+
+    <!-- Panel LLM: pregunta libre -->
+    <form class="panel" id="panel-llm" hidden>
+      <div class="fila" id="fila-token" hidden style="margin-bottom:8px">
+        <label class="campo ancho"><span>Token del LLM (clave gratuita de Groq)</span>
+          <input type="password" id="token" autocomplete="off" placeholder="gsk_...">
+        </label>
+      </div>
+      <div class="fila">
+        <label class="campo"><span>Pregunta</span>
+          <input type="text" id="pregunta" maxlength="500" autocomplete="off" placeholder="Ej: ¿Qué tipos son súper efectivos contra Gyarados?">
+        </label>
+        <button type="submit" id="btn-llm">Enviar</button>
+      </div>
+      <p class="nota" id="nota-llm"></p>
+    </form>
+  </div>
+
+  <p class="pie" id="estado">Cargando…</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const chat = $("chat");
+let opciones = [];
+let historialLLM = [];
+
+// --- Utilidades -------------------------------------------------------------
+function agregarMensaje(clase, autor, texto) {
+  $("vacio")?.remove();
+  const div = document.createElement("div");
+  div.className = "msg " + clase;
+  const quien = document.createElement("small");
+  quien.textContent = autor;
+  const cuerpo = document.createElement("span");
+  cuerpo.textContent = texto;
+  div.append(quien, cuerpo);
+  chat.append(div);
+  chat.scrollTop = chat.scrollHeight;
+  return { div, quien, cuerpo };
+}
+
+async function pedir(url, cuerpo, cabeceras = {}) {
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...cabeceras },
+      body: JSON.stringify(cuerpo),
+    });
+    const datos = await r.json().catch(() => ({}));
+    if (!r.ok) return { error: datos.error || "Error del servidor (" + r.status + ")." };
+    return datos;
+  } catch (e) {
+    return { error: "No se pudo conectar con el servidor. ¿Sigue ejecutándose app.py?" };
+  }
+}
+
+function guardarToken(valor) { try { sessionStorage.setItem("token_llm", valor); } catch (e) {} }
+function leerToken() { try { return sessionStorage.getItem("token_llm") || ""; } catch (e) { return ""; } }
+
+// --- Cambio de chatbot ---------------------------------------------------------
+document.querySelectorAll("input[name=modo]").forEach((radio) => {
+  radio.addEventListener("change", () => {
+    $("panel-prolog").hidden = radio.value !== "prolog";
+    $("panel-llm").hidden = radio.value !== "llm";
+    if (radio.value === "llm") $("pregunta").focus();
+  });
+});
+
+// --- Chatbot Prolog -------------------------------------------------------------
+function dibujarEntradas() {
+  const opcion = opciones.find((o) => o.numero === Number($("opcion").value));
+  const contenedor = $("entradas");
+  contenedor.replaceChildren();
+  if (!opcion) return;
+  if (opcion.entradas.length === 0) {
+    const p = document.createElement("span");
+    p.className = "nota";
+    p.style.margin = "0 0 9px";
+    p.textContent = "Esta consulta no necesita datos.";
+    contenedor.append(p);
+    return;
+  }
+  opcion.entradas.forEach((entrada) => {
+    const label = document.createElement("label");
+    label.className = "campo";
+    const span = document.createElement("span");
+    span.textContent = "Ingrese " + entrada.etiqueta;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 60;
+    input.required = true;
+    input.autocomplete = "off";
+    input.placeholder = entrada.clase === "tipo" ? "Ej: fuego" : "Ej: pikachu";
+    label.append(span, input);
+    contenedor.append(label);
+  });
+}
+
+$("opcion").addEventListener("change", dibujarEntradas);
+
+$("panel-prolog").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const opcion = opciones.find((o) => o.numero === Number($("opcion").value));
+  if (!opcion) return;
+  const valores = [...$("entradas").querySelectorAll("input")].map((i) => i.value.trim());
+  agregarMensaje("usuario", "Tú → Prolog", opcion.texto + (valores.length ? "  —  " + valores.join(", ") : ""));
+  const espera = agregarMensaje("bot", "Prolog", "…");
+  $("btn-prolog").disabled = true;
+  const r = await pedir("/api/prolog", { opcion: opcion.numero, valores });
+  $("btn-prolog").disabled = false;
+  if (r.error) { espera.div.classList.add("error"); espera.cuerpo.textContent = r.error; return; }
+  if (!r.valida) espera.div.classList.add("error");
+  espera.quien.textContent = "Prolog · " + r.segundos + " s";
+  espera.cuerpo.textContent = r.respuesta;
+  chat.scrollTop = chat.scrollHeight;
+});
+
+// --- Chatbot LLM ---------------------------------------------------------------
+$("panel-llm").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const mensaje = $("pregunta").value.trim();
+  if (!mensaje) return;
+  const token = $("token").value.trim();
+  if (token) guardarToken(token);
+  agregarMensaje("usuario", "Tú → LLM", mensaje);
+  const espera = agregarMensaje("bot", "LLM", "…");
+  $("pregunta").value = "";
+  $("btn-llm").disabled = true;
+  const r = await pedir("/api/llm", { mensaje, historial: historialLLM }, token ? { "X-LLM-Token": token } : {});
+  $("btn-llm").disabled = false;
+  $("pregunta").focus();
+  if (r.error) { espera.div.classList.add("error"); espera.cuerpo.textContent = r.error; return; }
+  espera.quien.textContent = "LLM (" + r.modelo + ") · " + r.segundos + " s";
+  espera.cuerpo.textContent = r.respuesta;
+  historialLLM.push({ role: "user", content: mensaje }, { role: "assistant", content: r.respuesta });
+  historialLLM = historialLLM.slice(-6);
+  chat.scrollTop = chat.scrollHeight;
+});
+
+// --- Carga inicial ---------------------------------------------------------------
+async function iniciar() {
+  let estado;
+  try {
+    estado = await (await fetch("/api/estado")).json();
+  } catch (e) {
+    $("estado").textContent = "No se pudo conectar con el servidor.";
+    return;
+  }
+
+  // Prolog
+  opciones = estado.prolog.opciones || [];
+  if (estado.prolog.disponible) {
+    const grupos = {};
+    opciones.forEach((o) => {
+      if (!grupos[o.categoria]) {
+        grupos[o.categoria] = document.createElement("optgroup");
+        grupos[o.categoria].label = o.categoria;
+        $("opcion").append(grupos[o.categoria]);
+      }
+      const op = document.createElement("option");
+      op.value = o.numero;
+      op.textContent = o.numero + ". " + o.texto;
+      grupos[o.categoria].append(op);
+    });
+    dibujarEntradas();
+  } else {
+    $("aviso-prolog").hidden = false;
+    $("aviso-prolog").textContent = estado.prolog.error || "El chatbot Prolog no está disponible.";
+    $("opcion").disabled = true;
+    $("btn-prolog").disabled = true;
+  }
+
+  // LLM
+  if (!estado.llm.token_configurado) {
+    $("fila-token").hidden = false;
+    $("token").value = leerToken();
+    $("nota-llm").textContent = "El token se envía solo a este servidor local para consultar al modelo y no se guarda en disco.";
+  }
+
+  $("estado").textContent =
+    "Prolog: " + (estado.prolog.disponible ? opciones.length + " consultas disponibles" : "no disponible") +
+    "  ·  LLM: " + estado.llm.modelo +
+    (estado.llm.token_configurado ? " (token configurado en el servidor)" : " (ingrese su token en la pestaña LLM)");
+}
+
+iniciar();
+</script>
+</body>
+</html>

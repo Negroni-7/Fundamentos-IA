@@ -1,0 +1,81 @@
+[
+  {"id": 1,  "categoria": "Tipos",        "pregunta": "¿De qué tipo es Charizard?",
+   "prolog": {"opcion": 1, "valores": ["charizard"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["fuego", "volador"], "ignorar": ["charizard"]}},
+
+  {"id": 2,  "categoria": "Tipos",        "pregunta": "¿Qué pokémon son de tipo roca?",
+   "prolog": {"opcion": 2, "valores": ["roca"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["geodude", "graveler", "golem"], "ignorar": ["roca", "tierra"]}},
+
+  {"id": 3,  "categoria": "Tipos",        "pregunta": "¿Cuántos pokémon de tipo agua hay registrados?",
+   "prolog": {"opcion": 3, "valores": ["agua"]},
+   "evaluacion": {"forma": "numero", "esperado": 8}},
+
+  {"id": 4,  "categoria": "Tipos",        "pregunta": "¿Gyarados es de tipo dragón?",
+   "prolog": {"opcion": 4, "valores": ["gyarados", "dragon"]},
+   "evaluacion": {"forma": "si_no", "esperado": "no"}},
+
+  {"id": 5,  "categoria": "Tipos",        "pregunta": "¿Gengar tiene doble tipo?",
+   "prolog": {"opcion": 5, "valores": ["gengar"]},
+   "evaluacion": {"forma": "si_no", "esperado": "si"}},
+
+  {"id": 6,  "categoria": "Ventajas",     "pregunta": "¿Qué tipos son súper efectivos contra el tipo dragón?",
+   "prolog": {"opcion": 6, "valores": ["dragon"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["hielo", "hada", "dragon"], "ignorar": []}},
+
+  {"id": 7,  "categoria": "Ventajas",     "pregunta": "¿Contra qué tipos es súper efectivo el tipo tierra?",
+   "prolog": {"opcion": 7, "valores": ["tierra"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["electrico", "roca", "fuego", "veneno", "acero"], "ignorar": ["tierra"]}},
+
+  {"id": 8,  "categoria": "Ventajas",     "pregunta": "¿El tipo eléctrico es súper efectivo contra el tipo tierra?",
+   "prolog": {"opcion": 8, "valores": ["electrico", "tierra"]},
+   "evaluacion": {"forma": "si_no", "esperado": "no"}},
+
+  {"id": 9,  "categoria": "Ventajas",     "pregunta": "¿Qué tipos de ataque son súper efectivos contra Gyarados?",
+   "prolog": {"opcion": 9, "valores": ["gyarados"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["planta", "electrico", "hielo", "roca"], "ignorar": ["gyarados", "agua", "volador"]}},
+
+  {"id": 10, "categoria": "Resistencias", "pregunta": "¿Qué tipos resisten los ataques de tipo fuego?",
+   "prolog": {"opcion": 10, "valores": ["fuego"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["agua", "roca", "fuego", "dragon"], "ignorar": []}},
+
+  {"id": 11, "categoria": "Resistencias", "pregunta": "¿El tipo acero resiste los ataques de tipo dragón?",
+   "prolog": {"opcion": 12, "valores": ["acero", "dragon"]},
+   "evaluacion": {"forma": "si_no", "esperado": "si"}},
+
+  {"id": 12, "categoria": "Inmunidades",  "pregunta": "¿Qué tipos son inmunes a los ataques de tipo normal?",
+   "prolog": {"opcion": 13, "valores": ["normal"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["fantasma"], "ignorar": ["normal"]}},
+
+  {"id": 13, "categoria": "Inmunidades",  "pregunta": "¿A qué tipos de ataque es inmune el tipo fantasma?",
+   "prolog": {"opcion": 14, "valores": ["fantasma"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["normal", "lucha"], "ignorar": ["fantasma"]}},
+
+  {"id": 14, "categoria": "Inmunidades",  "pregunta": "¿El tipo volador es inmune a los ataques de tipo tierra?",
+   "prolog": {"opcion": 15, "valores": ["volador", "tierra"]},
+   "evaluacion": {"forma": "si_no", "esperado": "si"}},
+
+  {"id": 15, "categoria": "Evoluciones",  "pregunta": "¿A qué pokémon evoluciona Dragonair?",
+   "prolog": {"opcion": 16, "valores": ["dragonair"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["dragonite"], "ignorar": ["dragonair", "dratini"]}},
+
+  {"id": 16, "categoria": "Evoluciones",  "pregunta": "¿Cuál es la cadena evolutiva completa de Machoke?",
+   "prolog": {"opcion": 17, "valores": ["machoke"]},
+   "evaluacion": {"forma": "conjunto", "esperado": ["machop", "machoke", "machamp"], "ignorar": []}},
+
+  {"id": 17, "categoria": "Evoluciones",  "pregunta": "¿Haunter es una forma base, intermedia o final?",
+   "prolog": {"opcion": 18, "valores": ["haunter"]},
+   "evaluacion": {"forma": "palabra", "esperado": "intermedia"}},
+
+  {"id": 18, "categoria": "Evoluciones",  "pregunta": "¿Qué pokémon registrados no tienen cadena evolutiva?",
+   "prolog": {"opcion": 19, "valores": []},
+   "evaluacion": {"forma": "conjunto", "esperado": ["farfetch", "lapras", "electabuzz", "snorlax", "tauros", "mewtwo"], "ignorar": []}},
+
+  {"id": 19, "categoria": "Compuesta (fuera del menú)", "pregunta": "¿Qué pokémon son al mismo tiempo de tipo agua y de tipo psíquico?",
+   "prolog": null,
+   "evaluacion": {"forma": "conjunto", "esperado": ["slowpoke", "slowbro"], "ignorar": ["agua", "psiquico"]}},
+
+  {"id": 20, "categoria": "Entidad no registrada", "pregunta": "¿De qué tipo es Eevee?",
+   "prolog": {"opcion": 1, "valores": ["eevee"]},
+   "evaluacion": {"forma": "no_registrado", "prohibido": ["normal"]}}
+]
